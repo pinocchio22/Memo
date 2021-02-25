@@ -4,11 +4,12 @@ import android.annotation.SuppressLint
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
 
 @SuppressLint("StaticFieldLeak")
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() , OnDeleteListener{
 
     lateinit var db : MemoDatabase
     var memoList = listOf<MemoEntity>()
@@ -21,9 +22,15 @@ class MainActivity : AppCompatActivity() {
 
         button_add.setOnClickListener{
             val memo = MemoEntity(null, edittext_memo.text.toString())
+            edittext_memo.setText("")
             insertMemo(memo)
         }
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        getAllMemo()
     }
+
 
 
     //1. Insert Data
@@ -63,11 +70,26 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun deleteMemo(){
+    fun deleteMemo(memo: MemoEntity){
+        val deleteTask = object : AsyncTask<Unit,Unit,Unit>(){
+            override fun doInBackground(vararg params: Unit?) {
+                db.memoDAO().delete(memo)
+            }
 
+            override fun onPostExecute(result: Unit?) {
+                super.onPostExecute(result)
+                getAllMemo()
+            }
+        }
+
+        deleteTask.execute()
     }
 
     fun setRecyclerView(memoList: List<MemoEntity>){
+        recyclerView.adapter = MyAdapter(this,memoList,this)
+    }
 
+    override fun onDeleteListner(memo: MemoEntity) {
+        deleteMemo(memo)
     }
 }
